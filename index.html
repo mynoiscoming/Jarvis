@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS AI Assistant</title>
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-glow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
+            --bg-color: #0a0f1d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 로그인 / 회원가입 화면 */
+        #auth-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 15, 29, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 40px;
+            border-radius: 15px;
+            border: 1px solid var(--neon-blue);
+            box-shadow: var(--neon-glow);
+            width: 350px;
+            text-align: center;
+        }
+
+        .auth-container h2 {
+            color: var(--neon-blue);
+            margin-bottom: 20px;
+            text-shadow: var(--neon-glow);
+        }
+
+        .auth-container input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: white;
+        }
+
+        .auth-container input:focus {
+            border-color: var(--neon-blue);
+            outline: none;
+        }
+
+        .auth-container button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background: transparent;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .auth-container button:hover {
+            background: var(--neon-blue);
+            color: black;
+            box-shadow: var(--neon-glow);
+        }
+
+        .auth-toggle {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #aaa;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* 메인 대시보드 구조 */
+        #main-dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 100vh;
+            display: none; /* 로그인 전에는 숨김 */
+        }
+
+        /* 왼쪽 사이드바 (JARVIS & 미션 리스트) */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.02);
+            border-right: 1px solid rgba(0, 243, 255, 0.2);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--neon-blue);
+            text-shadow: var(--neon-glow);
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+
+        .user-welcome {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .todo-section {
+            flex-grow: 1;
+        }
+
+        .todo-section h3 {
+            font-size: 16px;
+            color: var(--neon-blue);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .todo-list {
+            list-style: none;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--neon-blue);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .todo-item input[type="checkbox"] {
+            margin-right: 10px;
+            accent-color: var(--neon-blue);
+            cursor: pointer;
+        }
+
+        /* 메인 섹션 (홀로그램 및 채팅) */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px;
+            position: relative;
+        }
+
+        /* 홀로그램 캔버스 영역 */
+        .hologram-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            position: relative;
+        }
+
+        canvas {
+            position: absolute;
+            z-index: 1;
+        }
+
+        /* 자비스 자막 대사창 */
+        .jarvis-subtitle {
+            position: absolute;
+            bottom: 120px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 243, 255, 0.4);
+            max-width: 80%;
+            text-align: center;
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 0 0 5px var(--neon-blue);
+            z-index: 2;
+            min-height: 45px;
+        }
+
+        /* 채팅 입력창 영역 */
+        .input-container {
+            width: 100%;
+            max-width: 700px;
+            display: flex;
+            gap: 10px;
+            z-index: 2;
+        }
+
+        .chat-input {
+            flex-grow: 1;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 30px;
+            color: white;
+            font-size: 16px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--neon-blue);
+            box-shadow: var(--neon-glow);
+        }
+
+        .send-btn {
+            padding: 0 25px;
+            background: transparent;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .send-btn:hover {
+            background: var(--neon-blue);
+            color: black;
+            box-shadow: var(--neon-glow);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="auth-container" id="login-box">
+            <h2 id="auth-title">JARVIS SYSTEM</h2>
+            <input type="text" id="user-name" placeholder="사용자 이름 (회원가입시 필요)">
+            <input type="email" id="auth-email" placeholder="이메일 주소">
+            <input type="password" id="auth-pass" placeholder="비밀번호">
+            <button id="auth-btn" onclick="handleAuth()">접속하기 (Login)</button>
+            <div class="auth-toggle" onclick="toggleAuthMode()">새 프로필 생성하기 (Sign Up)</div>
+        </div>
+    </div>
+
+    <div id="main-dashboard">
+        <div class="sidebar">
+            <div class="logo">JARVIS</div>
+            <div class="user-welcome" id="welcome-text">ACCESS GRANTED</div>
+            
+            <div class="todo-section">
+                <h3>System Tasks</h3>
+                <ul class="todo-list" id="todo-list">
+                    </ul>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="hologram-container">
+                <canvas id="hologramCanvas"></canvas>
+                <div class="jarvis-subtitle" id="jarvis-speech-text">시스템 준비 완료. 명령을 대기 중입니다.</div>
+            </div>
+
+            <div class="input-container">
+                <input type="text" id="chat-input" class="chat-input" placeholder="자비스에게 명령을 입력하세요..." onkeypress="if(event.key==='Enter') sendCommand()">
+                <button class="send-btn" onclick="sendCommand()">전송</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 시스템 변수 및 상태 관리 ---
+        let isSignUpMode = false;
+        let currentUser = null;
+        let isSpeaking = false; // 자비스가 말하는 중인지 체크 (홀로그램 활성화용)
+
+        // 3~4명 제한을 위해 로컬스토리지 유저 데이터 가져오기
+        let users = JSON.parse(localStorage.getItem('jarvis_users')) || {};
+
+        // --- 로그인 / 회원가입 로직 ---
+        function toggleAuthMode() {
+            isSignUpMode = !isSignUpMode;
+            const title = document.getElementById('auth-title');
+            const btn = document.getElementById('auth-btn');
+            const toggleText = document.querySelector('.auth-toggle');
+            const nameInput = document.getElementById('user-name');
+
+            if (isSignUpMode) {
+                title.innerText = "CREATE PROFILE";
+                btn.innerText = "프로필 생성 (Sign Up)";
+                toggleText.innerText = "기존 프로필로 접속하기 (Login)";
+                nameInput.style.display = "block";
+            } else {
+                title.innerText = "JARVIS SYSTEM";
+                btn.innerText = "접속하기 (Login)";
+                toggleText.innerText = "새 프로필 생성하기 (Sign Up)";
+                nameInput.style.display = "none";
+            }
+        }
+        // 초기 로드 시 로그인 모드이므로 이름 입력창 숨김
+        document.getElementById('user-name').style.display = "none";
+
+        function handleAuth() {
+            const name = document.getElementById('user-name').value.trim();
+            const email = document.getElementById('auth-email').value.trim();
+            const pass = document.getElementById('auth-pass').value.trim();
+
+            if (!email || !pass) {
+                alert("이메일과 비밀번호를 입력해주세요.");
+                return;
+            }
+
+            if (isSignUpMode) {
+                // 회원가입
+                if (!name) { alert("이름을 입력해주세요."); return; }
+                if (Object.keys(users).length >= 4) {
+                    alert("메모리 초과: 최대 4명의 사용자만 등록할 수 있습니다.");
+                    return;
+                }
+                if (users[email]) {
+                    alert("이미 등록된 이메일입니다.");
+                    return;
+                }
+                
+                users[email] = { name: name, password: pass, todos: [] };
+                localStorage.setItem('jarvis_users', JSON.stringify(users));
+                alert("프로필 생성 완료! 로그인 해주세요.");
+                toggleAuthMode();
+            } else {
+                // 로그인
+                if (users[email] && users[email].password === pass) {
+                    currentUser = users[email];
+                    currentUser.email = email; // 키 추적용
+                    
+                    // 가상 이메일 발송 알림
+                    alert(`[자동 알림] ${email}로 로그인 안내 메일이 발송되었습니다.`);
+                    
+                    // 화면 전환
+                    document.getElementById('auth-screen').style.display = "none";
+                    document.getElementById('main-dashboard').style.display = "grid";
+                    document.getElementById('welcome-text').innerText = `WELCOME BACK, ${currentUser.name.toUpperCase()}`;
+                    
+                    initHologram();
+                    renderTodos();
+                    
+                    // 자비스 첫 인사 (한영 혼합)
+                    jarvisSpeak(`안녕하세요, ${currentUser.name}님. Systems are fully operational. 무엇을 도와드릴까요?`);
+                } else {
+                    alert("이메일 혹은 비밀번호가 일치하지 않습니다.");
+                }
+            }
+        }
+
+        // --- 투두 리스트 (태스크) 로직 ---
+        function renderTodos() {
+            const todoList = document.getElementById('todo-list');
+            todoList.innerHTML = '';
+            currentUser.todos.forEach((todo, index) => {
+                const li = document.createElement('li');
+                li.className = 'todo-item';
+                li.innerHTML = `
+                    <input type="checkbox" onclick="deleteTodo(${index})">
+                    <span>${todo}</span>
+                `;
+                todoList.appendChild(li);
+            });
+        }
+
+        function addTodo(task) {
+            currentUser.todos.push(task);
+            users[currentUser.email].todos = currentUser.todos;
+            localStorage.setItem('jarvis_users', JSON.stringify(users));
+            renderTodos();
+        }
+
+        function deleteTodo(index) {
+            // 체크박스 클릭 시 바로 삭제 효과
+            currentUser.todos.splice(index, 1);
+            users[currentUser.email].todos = currentUser.todos;
+            localStorage.setItem('jarvis_users', JSON.stringify(users));
+            // 약간의 딜레이 후 리렌더링해서 사라지는 느낌 주기
+            setTimeout(renderTodos, 200);
+        }
+
+        // --- 자비스 대화 및 음성(TTS) 로직 ---
+        function sendCommand() {
+            const inputElement = document.getElementById('chat-input');
+            const command = inputElement.value.trim();
+            if (!command) return;
+
+            inputElement.value = '';
+
+            // 만약 대화에 "추가"라는 말이 들어가면 자동으로 목록에 넣어줌
+            if (command.includes("추가")) {
+                // 예: "오늘 운동하기 목록에 추가해줘" -> "오늘 운동하기" 추출 시도
+                const task = command.replace("목록에", "").replace("추가해줘", "").replace("추가", "").trim();
+                if (task) {
+                    addTodo(task);
+                    jarvisSpeak(`알겠습니다. 할 일 목록에 '${task}'를 추가했습니다. Task added successfully.`);
+                    return;
+                }
+            }
+
+            // 일반 한영 혼합 답변 패턴 처리
+            if (command.includes("안녕") || command.includes("hello") || command.includes("Hi")) {
+                jarvisSpeak(`Hello. 반갑습니다, ${currentUser.name}님. 오늘도 좋은 하루입니다.`);
+            } else if (command.includes("이름") || command.includes("who are you")) {
+                jarvisSpeak("I am JARVIS. 제 이름은 자비스, 당신의 인공지능 비서입니다.");
+            } else if (command.includes("고마워") || command.includes("thank you")) {
+                jarvisSpeak("Anytime, sir. 천만에요, 도움이 되어 기쁩니다.");
+            } else {
+                // 기본 답변
+                jarvisSpeak(`명령을 분석 중입니다: "${command}". 현재 자비스 코어 기능을 최적화 중이라 이 명령은 수행할 수 없습니다. 시스템을 업그레이드 해주세요.`);
+            }
+        }
+
+        function jarvisSpeak(text) {
+            // 자막창에 타이핑된 대사 보여주기
+            document.getElementById('jarvis-speech-text').innerText = text;
+
+            // 브라우저 내장 음성 합성(TTS) 기능 사용
+            if ('speechSynthesis' in window) {
+                // 이전 말 취소
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // 한국어 기본 설정 (영어가 섞여도 브라우저가 최대한 발음해 줌)
+                utterance.lang = 'ko-KR';
+                utterance.rate = 1.0; // 속도
+                utterance.pitch = 0.9; // 자비스스러운 약간 낮은 목소리 톤
+
+                // 음성이 시작될 때와 끝날 때 홀로그램 입자 반응 연동
+                utterance.onstart = () => { isSpeaking = true; };
+                utterance.onend = () => { isSpeaking = false; };
+                utterance.onerror = () => { isSpeaking = false; };
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                // 음성 미지원 브라우저 대응용 가상 타이머
+                isSpeaking = true;
+                setTimeout(() => { isSpeaking = false; }, 3000);
+            }
+        }
+
+        // --- 미래형 홀로그램 애니메이션 (Canvas) ---
+        const canvas = document.getElementById('hologramCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function initHologram() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // 입자 생성
+            particles = [];
+            for (let i = 0; i < 60; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 2 + 1,
+                    angle: Math.random() * Math.PI * 2,
+                    speed: Math.random() * 0.5 + 0.2
+                });
+            }
+            animate();
+        }
+
+        function resizeCanvas() {
+            const container = document.querySelector('.hologram-container');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 홀로그램 중심 코어 원 그리기
+            let centerX = canvas.width / 2;
+            let centerY = canvas.height / 2;
+            let coreRadius = isSpeaking ? 80 + Math.sin(Date.now() * 0.05) * 10 : 70; // 말할 때 펄스 효과
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 말할 때 격렬하게 움직이는 내부 파동 원
+            if (isSpeaking) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, coreRadius - 15 + Math.cos(Date.now() * 0.02) * 8, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(0, 243, 255, 0.6)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // 입자 배열 애니메이션
+            particles.forEach(p => {
+                // 말할 때 입자들이 중심 주위로 더 빠르게 회전하거나 진동함
+                let currentSpeed = isSpeaking ? p.speed * 6 : p.speed;
+                p.angle += currentSpeed * 0.02;
+
+                // 회전 궤도 계산
+                let xOffset = Math.cos(p.angle) * 120;
+                let yOffset = Math.sin(p.angle) * 120;
+
+                let currentX = centerX + xOffset + Math.sin(p.angle * 2) * 10;
+                let currentY = centerY + yOffset + Math.cos(p.angle * 2) * 10;
+
+                ctx.beginPath();
+                ctx.arc(currentX, currentY, isSpeaking ? p.radius * 1.8 : p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = isSpeaking ? '#ffffff' : '#00f3ff';
+                ctx.shadowBlur = isSpeaking ? 15 : 5;
+                ctx.shadowColor = '#00f3ff';
+                ctx.fill();
+                ctx.shadowBlur = 0; // 리셋
+
+                // 말할 때 입자들과 중심을 잇는 가느다란 가상 선 연결 (SF 효과)
+                if (isSpeaking && Math.random() > 0.85) {
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(currentX, currentY);
+                    ctx.strokeStyle = 'rgba(0, 243, 255, 0.15)';
+                    ctx.stroke();
+                }
+            });
+
+            requestAnimationFrame(animate);
+        }
+    </script>
+</body>
+</html>
